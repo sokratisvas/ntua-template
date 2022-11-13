@@ -1,0 +1,185 @@
+\documentclass[11pt,letterpaper]{article}
+\usepackage{tikz}
+\usepackage[utf8]{inputenc}
+\usepackage[LGR, T1]{fontenc}
+\usepackage[greek,english]{babel}
+\usepackage{alphabeta}
+\usepackage{textgreek}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\textwidth 6.5in
+\textheight 9.in
+\oddsidemargin 0in
+\headheight 0in
+\usepackage{graphicx}
+\usepackage{fancybox}
+\usepackage[utf8]{inputenc}
+\usepackage{epsfig,graphicx}
+\usepackage{multicol,pst-plot}
+\usepackage{pstricks}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{eucal}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage[left=2cm,right=2cm,top=2cm,bottom=2cm]{geometry}
+\pagestyle{empty}
+\DeclareMathOperator{\tr}{Tr}
+\newcommand*{\op}[1]{\check{\mathbf#1}}
+\newcommand{\bra}[1]{\langle #1 |}
+\newcommand{\ket}[1]{| #1 \rangle}
+\newcommand{\braket}[2]{\langle #1 | #2 \rangle}
+\newcommand{\mean}[1]{\langle #1 \rangle}
+\newcommand{\opvec}[1]{\check{\vec #1}}
+\renewcommand{\sp}[1]{$${\begin{split}#1\end{split}}$$}
+
+\usepackage{lipsum}
+
+\usepackage{listings}
+\usepackage{color}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+	backgroundcolor=\color{backcolour},   
+	commentstyle=\color{codegreen},
+	keywordstyle=\color{magenta},
+	numberstyle=\tiny\color{codegray},
+	stringstyle=\color{codepurple},
+	basicstyle=\footnotesize,
+	breakatwhitespace=false,         
+	breaklines=true,                 
+	captionpos=b,                    
+	keepspaces=true,                 
+	numbers=left,                    
+	numbersep=5pt,                  
+	showspaces=false,                
+	showstringspaces=false,
+	showtabs=false,                  
+	tabsize=2
+}
+
+\lstset{style=mystyle}
+
+\begin{document}
+\pagestyle{plain}
+
+\begin{flushleft}
+Σωκράτης Παναγιώτης Βασιλείου\\
+ΑΜ: 03121403
+\end{flushleft}
+
+\begin{flushright}\vspace{-15mm}
+\includegraphics[height=2cm]{ntua_logo.png}
+\end{flushright}
+ 
+\begin{center}\vspace{-1cm}
+\textbf{\large Θεμελιώδη Θέματα Επιστήμης Υπολογιστών}\\
+1η Σειρά Ασκήσεων
+\end{center}
+
+ 
+\rule{\linewidth}{0.1mm}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\bigskip
+
+\section*{Άσκηση 8}
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+
+\lstset{style=mystyle}
+\begin{lstlisting}[language=Python]
+from __future__ import annotations
+
+def horn_sat_solver(horn_formula: list[list[int]], total_literals: int) -> None:
+    """
+    horn_sat_solver: Given a Horn Formula determines if it's satisfiable
+
+    :param horn_formula: List of Clauses. A Clause is ενψοδεδ as a list of ints.
+    
+    Examples:
+    
+
+    (not(x1) or not(x2)) and (x1 or not(x3)) and (not(x2) or x3) and x2
+    horn_formula: [[-1, -2], [1, -3], [-2, 3], [2]]
+
+    :param total_literals: Total number of literals
+    """
+
+    score: dict[tuple[int], int] = {}
+    # score assigned to each Clause
+    for clause in horn_formula:
+        score[tuple(clause)] = 0
+        for literal in clause:
+            if literal < 0:
+                score[tuple(clause)] += 1
+
+    reverse_score: dict[int, set(tuple[int])] = {}
+    # Clauses assigned to each score
+    for clause in score:
+        reverse_score[score[clause]] = set()
+    for clause in score:
+        reverse_score[score[clause]].add(clause)
+
+    appears_as_neg: dict[int, set[tuple[int]]] = {lit: set() for lit in range(1, total_literals + 1)}
+    # Clauses that contain a literal's negation
+    for clause in horn_formula:
+        for literal in clause:
+            if literal < 0:
+                appears_as_neg[abs(literal)].add(tuple(clause))
+
+    positive_literal: dict[tuple[int], int] = {}
+    # Positive literal of each Clause. 
+    for clause in horn_formula:
+        for literal in clause:
+            if literal > 0:
+                positive_literal[tuple(clause)] = literal
+            else:
+                positive_literal[tuple(clause)] = None
+
+    res: set[int] = set()
+    while len(reverse_score[0]) != 0:
+        current_clause = reverse_score[0].pop()
+        literal = positive_literal[current_clause]
+        if literal == None:
+            print("Unsatisfiable")
+            return
+        if literal not in res and current_clause not in appears_as_neg[literal]:
+            res.add(literal)
+            for clause in appears_as_neg[literal]:
+                reverse_score[score[clause]].remove(clause)
+                reverse_score[score[clause] - 1].add(clause)
+
+    print("Satisfiable")
+    sol: dict[int, bool] = {}
+    for i in range(1, total_literals + 1):
+        sol[i] = True if i in res else False
+    print(sol)
+\end{lstlisting}
+\end{document}
